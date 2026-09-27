@@ -10,6 +10,12 @@ function engChip(e){var slug=ENG_ICON[e];
 var CHECKS = {one_web_address:"One clear web address",key_pages_found:"Key pages found: about, FAQ, financials",structured_data_valid:"Machine-readable labels load without errors",
   ai_search_crawlers_allowed:"AI search tools can read the site",identified_as_organization:"Labels say you're an organization",nonprofit_details:"Labels include nonprofit details",
   locations_labeled:"Locations are labeled",faq_labeled:"FAQ is labeled as Q&A",descriptive_homepage_title:"Homepage title says what you do",ai_training_crawlers_allowed:"AI models may learn from the site"};
+/* Ruleset v1.2 (2026-09-27): weighted checks; each value is {points, pass: true|false|null}. null = not measured this run. */
+var CHECKS_V12 = [["ai_search_access","AI search tools can reach the site"],["one_web_address","One clear web address"],
+  ["descriptive_homepage_title","Homepage title says what you do"],["content_fresh","Key pages updated in the last year"],
+  ["about_page_clear","About page states your mission and service area"],["location_visible","Your city or service area is written on the site"],
+  ["nonprofit_status_visible","Nonprofit status shown or linked to your public filing"],["ai_training_access","AI models may learn from the site"],
+  ["markup_hygiene","Machine-readable labels are clean and say you're an organization"]];
 var D = null;
 
 function $(s){return document.querySelector(s);}
@@ -215,15 +221,26 @@ function renderScore(s,c){
   var d=s.details||{},qs=d.questions||[],rep=d.reputation||{},ch=d.checks||{},meta=c.question_meta||{};
   var qi=qs.map(function(q){var lbl=(meta[q.prompt_id]||{}).label||q.question;return '<li class="'+(q.rate>=0.999?'y':q.rate>0?'h':'n')+'"><strong>'+q.mentioned+' of '+q.asked+'</strong> '+esc(lbl)+'</li>';}).join("");
   var avg=qs.length?qs.reduce(function(a,q){return a+(+q.rate);},0)/qs.length:0;
-  var ci=Object.keys(CHECKS).map(function(k){return '<li class="'+(ch[k]?'y':'n')+'">'+CHECKS[k]+'</li>';}).join("");
-  var passed=Object.keys(CHECKS).filter(function(k){return ch[k];}).length;
+  var v12=s.formula_version==="v1.2", ci, passed, webIntro, webMath;
+  if(v12){
+    var earned=0, measurable=0;
+    ci=CHECKS_V12.map(function(p){var v=ch[p[0]]||{},pt=+v.points||0,cls=v.pass===true?'y':v.pass===false?'n':'h';
+      if(v.pass===true||v.pass===false){measurable+=pt;if(v.pass===true)earned+=pt;}
+      return '<li class="'+cls+'">'+p[1]+' ('+pt+' pts'+(v.pass==null?', not measured this run':'')+')</li>';}).join("");
+    webIntro="Nine checks, weighted by how much evidence supports each one.";
+    webMath=earned+" of "+measurable+" measurable points earned"+(measurable<30?", scaled to 30":"")+" = "+r2(+s.website_readiness);
+  } else {
+    ci=Object.keys(CHECKS).map(function(k){return '<li class="'+(ch[k]?'y':'n')+'">'+CHECKS[k]+'</li>';}).join("");
+    passed=Object.keys(CHECKS).filter(function(k){return ch[k];}).length;
+    webIntro="Ten checks, 3 points each."; webMath=passed+" of 10 pass. "+passed+" × 3 = "+passed*3;
+  }
   var ri='<li class="'+(rep.tone>=5?'y':'h')+'">Positive tone when named ('+r1(rep.tone||0)+' of 5)</li>'+
     '<li class="'+(rep.accuracy>=5?'y':'h')+'">No factual errors found ('+r1(rep.accuracy||0)+' of 5)</li>'+
     '<li class="'+(rep.top_pick>=5?'y':'h')+'">Top pick in '+(rep.top_pick_count||0)+' of '+(rep.mentions||0)+' mentions ('+r2(rep.top_pick||0)+' of 5)</li>'+
     '<li class="'+(rep.consistency>=5?'y':'n')+'">Google listing uses your main web address ('+r1(rep.consistency||0)+' of 5)</li>';
   var cards=[
     {pts:s.found_by_ai,max:50,name:"Found by AI",intro:"How often AI names you, question by question.",items:qi,math:"Average across "+qs.length+" questions: "+Math.round(avg*1000)/10+"%. Times 50 = "+r2(+s.found_by_ai)},
-    {pts:s.website_readiness,max:30,name:"Website readiness",intro:"Ten checks, 3 points each.",items:ci,math:passed+" of 10 pass. "+passed+" × 3 = "+passed*3},
+    {pts:s.website_readiness,max:30,name:"Website readiness",intro:webIntro,items:ci,math:webMath},
     {pts:s.reputation,max:20,name:"Reputation and accuracy",intro:"What AI says when it does mention you.",items:ri,math:"Four parts, 5 points each. Total "+r2(+s.reputation)}];
   cards.forEach(function(x){$("#explain").appendChild(el("div","tile",'<div class="big">'+Math.round(x.pts||0)+'<span style="font-size:1.1rem;color:var(--muted);font-weight:600"> / '+x.max+'</span></div><h3>'+x.name+'</h3><p class="muted" style="font-size:.93rem">'+x.intro+'</p><ul>'+x.items+'</ul><div class="math">'+x.math+'</div>'));});
   $("#score-title").textContent="How your score of "+s.total+" adds up";
