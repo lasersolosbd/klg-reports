@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>AI Visibility Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="app"><div class="state"><div><p class="muted">Loading your report…</p></div></div></div>
+
+<template id="tpl">
+<header class="site"><div class="wrap">
+  <div class="client-logo"><img id="client-logo" alt=""></div>
+  <nav aria-label="Report sections"><a href="#month">This month</a><a href="#results">Results</a><a href="#todo">To-do list</a><a href="#questions">Your questions</a><a href="#score">Your score</a></nav>
+  <div class="by"><span class="lbl">Report by</span><a class="klg" href="#top" aria-label="Kind Logic Group">
+    <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#0F7C7A"/><path d="M16 24.5c-.4 0-.8-.1-1.1-.4L9.3 18.9A4.6 4.6 0 0 1 16 12.6a4.6 4.6 0 0 1 6.7 6.3l-5.6 5.2c-.3.3-.7.4-1.1.4z" fill="#fff"/><path d="M12.6 17.6l2.4 2.4 4.6-4.8" stroke="#0F7C7A" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <b>Kind Logic Group</b></a></div>
+</div></header>
+<main id="top">
+<section class="hero" aria-labelledby="hero-title"><div class="wrap">
+  <div class="gauge" role="img" id="gauge-wrap"><svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="86" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="16"/><circle id="gauge-arc" cx="100" cy="100" r="86" fill="none" stroke="var(--gold)" stroke-width="16" stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="540.35"/></svg>
+    <div class="num"><b id="score-num">0</b><span>out of 100</span></div></div>
+  <div><span class="stamp" id="stamp"></span><h1 id="hero-title"></h1><p class="lede" id="hero-lede"></p><div class="pillars" id="pillars"></div><div class="upside" id="upside"></div><div class="hist" id="hist"></div></div>
+</div></section>
+<section class="letter"><div class="wrap"><div class="card"><h2 id="letter-title"></h2><div id="letter-body"></div>
+  <div class="sig"><svg width="36" height="36" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#0F7C7A"/><path d="M16 24.5c-.4 0-.8-.1-1.1-.4L9.3 18.9A4.6 4.6 0 0 1 16 12.6a4.6 4.6 0 0 1 6.7 6.3l-5.6 5.2c-.3.3-.7.4-1.1.4z" fill="#fff"/><path d="M12.6 17.6l2.4 2.4 4.6-4.8" stroke="#0F7C7A" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div><strong id="signoff"></strong><br>Questions about anything in here? Just ask.</div></div></div></div></section>
+<section class="block" id="month"><div class="wrap"><span class="kicker">This month at a glance</span><h2>One big win, one quick fix, one long game</h2><div class="three" id="three"></div></div></section>
+<section class="love"><div class="wrap"><h2>What AI already gets right about you</h2><p class="lede">When AI reads about you, it finds some great stuff. These are real facts from your site and public coverage, and they're exactly what we want every assistant repeating to your next donor.</p><div class="bursts" id="bursts"></div></div></section>
+<section class="block" id="results"><div class="wrap"><span class="kicker">The questions and the answers</span><h2>Did AI mention you?</h2>
+  <div class="prose"><p>None of these questions mention you by name. That's on purpose: we want to know whether AI recommends you to someone who has never heard of you. A green dot means the assistant named you in its answer. Where we have it, we also show who else got named for that question and where you ranked among them.</p></div>
+  <div class="matrix-box"><div class="scroll"><table class="matrix" id="matrix"><thead><tr><th class="q" scope="col">Question</th><th scope="col" data-eng="chatgpt">ChatGPT</th><th scope="col" data-eng="claude">Claude</th><th scope="col" data-eng="gemini">Gemini</th><th scope="col" data-eng="grok">Grok</th><th scope="col" data-eng="perplexity">Perplexity</th><th scope="col">Total</th></tr></thead><tbody></tbody></table></div>
+  <div class="legend"><span><span class="dots"><span class="dot on"></span></span>Named</span><span><span class="dots"><span class="dot"></span></span>Not named</span><span>We combine your two most recent runs (asked every two weeks) into one score, so a single off day for one assistant doesn't sink it — that's why a cell can show more than one dot.</span></div></div>
+  <div class="engines" id="engines"></div><p class="fine" id="results-note"></p></div></section>
+<section class="block" id="todo"><div class="wrap">
+  <div class="todo-head"><div><span class="kicker">Your to-do list</span><h2 id="todo-title"></h2>
+    <div class="prose"><p>Each item says what to do in plain English, and how many score points it's worth. Tap "For your web person" for the technical version. Check things off as you go; your whole team sees the same list.</p></div></div>
+    <div class="progress" aria-live="polite"><span id="prog-text"></span><div class="track"><i id="prog-bar"></i></div></div></div>
+  <div class="namebar"><label for="yourname">Your name, so we know who checked what:</label><input type="text" id="yourname" autocomplete="name" placeholder="First and last name"></div>
+  <div class="group-title"><h3>For leadership</h3><span class="muted">Decisions and owners outside the website</span></div><ol class="tasks" id="lead-tasks"></ol>
+  <div class="group-title"><h3>For your web person</h3><span class="muted">Hands-on fixes to your website</span></div><ol class="tasks" id="web-tasks"></ol>
+</div></section>
+<section class="block" id="questions"><div class="wrap"><span class="kicker">Help us ask better questions</span><h2>Are these the right questions?</h2>
+  <div class="prose"><p>You know your donors and volunteers better than we do. Tell us which questions to keep, which ones miss the mark, and what people actually ask about you. We track 8 questions for you at a time, and you can add up to 3 of your own per report — send us those, and we'll follow up to figure out which of the 8 to swap out so the total stays at 8. Every click saves automatically.</p></div>
+  <div class="qs"><div id="qlist"></div>
+    <div class="suggest"><label>Questions you think people ask their AI (up to 3)</label><div id="sug-box"></div>
+      <button class="btn" id="sug-add" type="button">+ Add another question</button>
+      <p class="fine" id="sug-cap-note" style="display:none;margin:0">You've used all 3 question slots for this report. We track 8 questions total for you, so we'll be in touch to talk through which of the current 8 to swap out for these.</p></div>
+    <div class="send"><button class="btn primary" id="sug-send" type="button">Send to us</button><span class="status" id="fb-status" role="status"></span></div>
+    <ul class="sug-list" id="sug-list"></ul></div></div></section>
+<section class="block" id="score"><div class="wrap"><span class="kicker">No black boxes</span><h2 id="score-title"></h2><div class="explain" id="explain"></div><p class="fine" id="score-foot"></p></div></section>
+<section class="block"><div class="wrap"><span class="kicker">What happens next</span><h2>We keep asking. You keep improving.</h2>
+  <div class="next"><div class="step"><div class="when">Every two weeks</div><p>We ask all five assistants your questions again, including any you add. Answers shift from day to day, so we look for trends, not single results.</p></div>
+  <div class="step"><div class="when">Every month</div><p>You get a report like this one: your new score, what moved, what AI is saying now, and a short list of what to tweak next. Never a firehose.</p></div>
+  <div class="step"><div class="when">Over a few months</div><p>Website fixes can show up within weeks. What AI "knows" without searching changes more slowly, as new AI versions come out. The national work is slowest to show and lasts the longest.</p></div></div>
+  <p class="fine" id="measured"></p></div></section>
+</main>
+<footer><div class="wrap"><a class="klg" href="#top" aria-label="Kind Logic Group, back to top"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#F8C013"/><path d="M16 24.5c-.4 0-.8-.1-1.1-.4L9.3 18.9A4.6 4.6 0 0 1 16 12.6a4.6 4.6 0 0 1 6.7 6.3l-5.6 5.2c-.3.3-.7.4-1.1.4z" fill="#142944"/><path d="M12.6 17.6l2.4 2.4 4.6-4.8" stroke="#F8C013" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Kind Logic Group</b></a><span>AI visibility for nonprofits that do good work and deserve to be found.</span></div></footer>
+</template>
+<script src="/app.js"></script>
+</body>
+</html>
