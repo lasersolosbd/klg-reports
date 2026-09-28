@@ -1,9 +1,11 @@
 /* KLG AI Visibility Report: renders one client's monthly report from the report API. */
 var CFG = { url: "https://shjzokwlgpxjxywgnpig.supabase.co", key: "sb_publishable_ENjlsmIC_h1oCwABcgl6hA_q56hjQOT" };
 var TOKEN = (location.pathname.match(/\/r\/([0-9a-fA-F-]{36})/) || [])[1] || new URLSearchParams(location.search).get("t");
-var ENG = ["chatgpt","claude","gemini","grok","perplexity"], EN = {chatgpt:"ChatGPT",claude:"Claude",gemini:"Gemini",grok:"Grok",perplexity:"Perplexity"};
+var ENG = ["chatgpt","claude","gemini","grok","perplexity"], EN = {chatgpt:"ChatGPT",claude:"Claude",gemini:"Gemini",grok:"Grok",perplexity:"Perplexity",google_ai_mode:"Google AI Mode"};
+/* Google AI Mode (added in ruleset v1.3) shows only when this report has answers from it, so older reports keep five columns. */
+var ENG_OPTIONAL = ["google_ai_mode"];
 var SI_VER = "16.32.0";
-var ENG_ICON = {chatgpt:"openai",claude:"anthropic",gemini:"googlegemini",grok:null,perplexity:"perplexity"};
+var ENG_ICON = {chatgpt:"openai",claude:"anthropic",gemini:"googlegemini",grok:null,perplexity:"perplexity",google_ai_mode:"google"};
 function engChip(e){var slug=ENG_ICON[e];
   if(slug) return '<span class="eng-chip"><img class="eng-ic" src="https://cdn.jsdelivr.net/npm/simple-icons@'+SI_VER+'/icons/'+slug+'.svg" alt="" aria-hidden="true" loading="lazy"><span class="eng-name">'+EN[e]+'</span></span>';
   return '<span class="eng-chip eng-chip-text"><span class="eng-name eng-name-grok">'+EN[e]+'</span></span>';}
@@ -56,7 +58,7 @@ function render(){
   pillars.forEach(function(p){$("#pillars").appendChild(el("div","pillar",'<span>'+p[0]+'</span><span class="bar"><i data-w="'+(p[1]/p[2]*100)+'"></i></span><span class="pts">'+Math.round(p[1])+'/'+p[2]+'</span>'));});
   if(s.previous!=null){var dlt=total-s.previous;$("#stamp").insertAdjacentHTML("afterend",'<span class="delta">'+(dlt>=0?"+":"")+dlt+' since last report</span>');}
   var rep=(s.details||{}).reputation||{}, checks=(s.details||{}).checks||{};
-  var potential=Math.round((+s.found_by_ai||0)+30+(+rep.tone||0)+(+rep.accuracy||0)+(+rep.top_pick||0)+5);
+  var potential=Math.round((+s.found_by_ai||0)+30+(+rep.tone||0)+(+rep.accuracy||0)+(+rep.top_pick||0)+(s.formula_version==="v1.3"?3+5:5));
   if(potential>total) $("#upside").innerHTML='<span aria-hidden="true">🎯</span><span><strong>Could reach about '+potential+'</strong> once the to-do list below is done, before AI answers even start to change. Most items take under an hour.</span>';
   else $("#upside").remove();
   $("#gauge-wrap").setAttribute("aria-label","AI Visibility Score: "+total+" out of 100");
@@ -98,13 +100,16 @@ function qList(c){var ids=(c.question_order&&c.question_order.length)?c.question
 function ccName(n,clientName){var isClient=String(n).toLowerCase()===String(clientName||"").toLowerCase();return isClient?'<b class="you">'+esc(n)+'</b>':esc(n);}
 
 function renderMatrix(c){
+  ENG_OPTIONAL.forEach(function(e){if(ENG.indexOf(e)===-1&&(D.matrix||[]).some(function(m){return m.engine===e;})){ENG.push(e);
+    var tot=document.querySelector("#matrix thead th:last-child");if(tot){var th=document.createElement("th");th.scope="col";th.dataset.eng=e;th.textContent=EN[e];tot.parentNode.insertBefore(th,tot);}}});
+  var COLS=ENG.length+2;
   var cell={},eh={},et={};ENG.forEach(function(e){eh[e]=0;et[e]=0;});
   D.matrix.forEach(function(m){cell[m.prompt_id+"|"+m.engine]=m;});
   var ccCell={};(D.competitor_context||[]).forEach(function(x){ccCell[x.prompt_id+"|"+x.engine]=x;});
   document.querySelectorAll("#matrix thead th[data-eng]").forEach(function(th){th.innerHTML=engChip(th.dataset.eng);});
   var G=c.groups||{},html="",last=null;
   qList(c).forEach(function(q){
-    if(q.group!==last&&G[q.group]){html+='<tr class="grp"><td colspan="7">'+esc(G[q.group][0])+'<span>'+esc(G[q.group][1])+'</span></td></tr>';}last=q.group;
+    if(q.group!==last&&G[q.group]){html+='<tr class="grp"><td colspan="'+COLS+'">'+esc(G[q.group][0])+'<span>'+esc(G[q.group][1])+'</span></td></tr>';}last=q.group;
     var tot=0,max=0;html+='<tr class="row"><td class="q">'+esc(q.text)+'<span class="who">'+esc(q.who)+'</span></td>';
     ENG.forEach(function(e){var m=cell[q.id+"|"+e]||{mentioned:0,asked:0};tot+=m.mentioned;max+=m.asked;eh[e]+=m.mentioned;et[e]+=m.asked;
       var d='<span class="dots">';for(var i=0;i<m.asked;i++)d+='<span class="dot'+(i<m.mentioned?' on':'')+'"></span>';
@@ -118,7 +123,7 @@ function renderMatrix(c){
       else if(cc.client_rank&&cc.client_rank>3) parts.push(ccName(D.client.name,D.client.name)+' was named, listed #'+cc.client_rank);
       if(!parts.length)return;
       whoParts.push('<span class="who-eng"><b class="eng-lbl">'+engChip(e)+':</b> '+parts.join(" — ")+'</span>');});
-    if(whoParts.length){html+='<tr class="who-row"><td colspan="7"><div class="who-wrap"><span class="who-cap">Who else AI named here:</span>'+whoParts.join("")+'</div></td></tr>';}
+    if(whoParts.length){html+='<tr class="who-row"><td colspan="'+COLS+'"><div class="who-wrap"><span class="who-cap">Who else AI named here:</span>'+whoParts.join("")+'</div></td></tr>';}
   });
   $("#matrix tbody").innerHTML=html;
   ENG.forEach(function(e){$("#engines").appendChild(el("div","eng",'<b>'+eh[e]+'<small style="font-size:.9rem;font-weight:600;color:var(--muted)"> / '+et[e]+'</small></b><span>'+engChip(e)+' named '+esc(D.client.name.split(" ")[0]==="Veterans"?"VCP":D.client.name)+'</span><div class="mini"><i style="width:'+(et[e]?eh[e]/et[e]*100:0)+'%"></i></div>'));});
@@ -221,7 +226,7 @@ function renderScore(s,c){
   var d=s.details||{},qs=d.questions||[],rep=d.reputation||{},ch=d.checks||{},meta=c.question_meta||{};
   var qi=qs.map(function(q){var lbl=(meta[q.prompt_id]||{}).label||q.question;return '<li class="'+(q.rate>=0.999?'y':q.rate>0?'h':'n')+'"><strong>'+q.mentioned+' of '+q.asked+'</strong> '+esc(lbl)+'</li>';}).join("");
   var avg=qs.length?qs.reduce(function(a,q){return a+(+q.rate);},0)/qs.length:0;
-  var v12=s.formula_version==="v1.2", ci, passed, webIntro, webMath;
+  var v13=s.formula_version==="v1.3", v12=s.formula_version==="v1.2"||v13, ci, passed, webIntro, webMath;
   if(v12){
     var earned=0, measurable=0;
     ci=CHECKS_V12.map(function(p){var v=ch[p[0]]||{},pt=+v.points||0,cls=v.pass===true?'y':v.pass===false?'n':'h';
@@ -234,14 +239,29 @@ function renderScore(s,c){
     passed=Object.keys(CHECKS).filter(function(k){return ch[k];}).length;
     webIntro="Ten checks, 3 points each."; webMath=passed+" of 10 pass. "+passed+" × 3 = "+passed*3;
   }
-  var ri='<li class="'+(rep.tone>=5?'y':'h')+'">Positive tone when named ('+r1(rep.tone||0)+' of 5)</li>'+
-    '<li class="'+(rep.accuracy>=5?'y':'h')+'">No factual errors found ('+r1(rep.accuracy||0)+' of 5)</li>'+
-    '<li class="'+(rep.top_pick>=5?'y':'h')+'">Top pick in '+(rep.top_pick_count||0)+' of '+(rep.mentions||0)+' mentions ('+r2(rep.top_pick||0)+' of 5)</li>'+
-    '<li class="'+(rep.consistency>=5?'y':'n')+'">Google listing uses your main web address ('+r1(rep.consistency||0)+' of 5)</li>';
+  var RM=v13?{t:4,a:4,p:4,g:3}:{t:5,a:5,p:5,g:5}, repMath;
+  var ri='<li class="'+(rep.tone>=RM.t?'y':'h')+'">Positive tone when named ('+r1(rep.tone||0)+' of '+RM.t+')</li>'+
+    '<li class="'+(rep.accuracy>=RM.a?'y':'h')+'">No factual errors found ('+r1(rep.accuracy||0)+' of '+RM.a+')</li>'+
+    '<li class="'+(rep.top_pick>=RM.p?'y':'h')+'">Top pick in '+(rep.top_pick_count||0)+' of '+(rep.mentions||0)+' mentions ('+r2(rep.top_pick||0)+' of '+RM.p+')</li>'+
+    '<li class="'+(rep.consistency>=RM.g?'y':'n')+'">Google listing uses your main web address ('+r1(rep.consistency||0)+' of '+RM.g+')</li>';
+  if(v13){
+    var off=rep.offsite||{}, sig=off.signals||{};
+    var OFF=[["cn_profile","Charity Navigator profile matches your organization","Claim and complete your free Charity Navigator profile."],
+      ["candid_seal","Candid Seal of Transparency (Bronze or higher)","Claim your free Candid profile and earn a Seal of Transparency."],
+      ["youtube_third_party","Named in someone else's YouTube video in the last 2 years","Ask a partner, local station or volunteer group to feature you in a video that says your name."],
+      ["news_recent","Named in local news in the last 90 days","Pitch one local story this quarter."],
+      ["youtube_own","Your own YouTube channel posted in the last year","Post one short video a quarter to your own channel."]];
+    ri+=OFF.map(function(o){var v=sig[o[0]]||{},pt=+v.points||0,cls=v.pass===true?'y':v.pass===false?'n':'h';
+      var link=v.pass===true&&v.evidence_url?' <a href="'+esc(v.evidence_url)+'" target="_blank" rel="noopener">see it</a>':'';
+      var tip=v.pass===false?'<br><span class="muted" style="font-size:.85rem">'+o[2]+'</span>':'';
+      return '<li class="'+cls+'">'+o[1]+' ('+pt+' pts'+(v.pass==null?', not measured this run':'')+')'+link+tip+'</li>';}).join("");
+    repMath=off.measured?("Tone, accuracy, top pick and Google listing (15 pts) plus off-site presence "+r2(off.score)+" of 5. Total "+r2(+s.reputation))
+      :("Off-site presence not measured this run, so the other four parts are scaled to 20. Total "+r2(+s.reputation));
+  } else repMath="Four parts, 5 points each. Total "+r2(+s.reputation);
   var cards=[
     {pts:s.found_by_ai,max:50,name:"Found by AI",intro:"How often AI names you, question by question.",items:qi,math:"Average across "+qs.length+" questions: "+Math.round(avg*1000)/10+"%. Times 50 = "+r2(+s.found_by_ai)},
     {pts:s.website_readiness,max:30,name:"Website readiness",intro:webIntro,items:ci,math:webMath},
-    {pts:s.reputation,max:20,name:"Reputation and accuracy",intro:"What AI says when it does mention you.",items:ri,math:"Four parts, 5 points each. Total "+r2(+s.reputation)}];
+    {pts:s.reputation,max:20,name:"Reputation and accuracy",intro:"What AI says when it does mention you.",items:ri,math:repMath}];
   cards.forEach(function(x){$("#explain").appendChild(el("div","tile",'<div class="big">'+Math.round(x.pts||0)+'<span style="font-size:1.1rem;color:var(--muted);font-weight:600"> / '+x.max+'</span></div><h3>'+x.name+'</h3><p class="muted" style="font-size:.93rem">'+x.intro+'</p><ul>'+x.items+'</ul><div class="math">'+x.math+'</div>'));});
   $("#score-title").textContent="How your score of "+s.total+" adds up";
   $("#score-foot").textContent=r2(+s.found_by_ai)+" + "+r2(+s.website_readiness)+" + "+r2(+s.reputation)+" = "+r2((+s.found_by_ai)+(+s.website_readiness)+(+s.reputation))+", rounded to "+s.total+". Based on "+(s.runs_included||[]).length+" tracking run"+((s.runs_included||[]).length===1?"":"s")+".";
